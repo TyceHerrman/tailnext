@@ -11,10 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         branch:
-          - chore/next-16.4.2
           - chore/content-maintenance
-          - experiment/typography-selector-parser-7
-          - fix/node-support-documentation
     steps:
       - uses: actions/checkout@v5
         with:
@@ -25,6 +22,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - run: npm update serialize-javascript --package-lock-only --ignore-scripts --no-audit --no-fund
       - run: npm ci
       - name: Format changed source and documentation
         run: |
@@ -67,3 +65,26 @@ jobs:
         if: always()
         continue-on-error: true
         run: npm audit
+  node-support:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.19.0', '22.13.0', 22]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fix/node-support-documentation
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typegen
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run prettier:check
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm run build
+      - run: npm run build-storybook
